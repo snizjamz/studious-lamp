@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raid Class &amp; Spec Signup</title>
+<style>
+:root{--bg:#f4efe6;--card:#fffaf0;--ink:#2a2118;--mute:#74685a;--line:#d9cdb8;--gold:#9a6b0f;--on:#2a2118;--onink:#fffaf0}
+@media (prefers-color-scheme:dark){:root{--bg:#14110d;--card:#1f1a14;--ink:#f0e6d2;--mute:#a39680;--line:#3a3126;--gold:#e0b04a;--on:#e0b04a;--onink:#14110d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Georgia,"Times New Roman",serif}
+main{max-width:980px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:1.7rem;margin:0 0 4px;color:var(--gold)}
+p.sub{margin:0 0 18px;color:var(--mute)}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tabs button,.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:8px;cursor:pointer}
+.tabs button.act,.btn.primary{background:var(--on);color:var(--onink);border-color:var(--on)}
+.btn:disabled{opacity:.6;cursor:wait}
+.field{display:grid;gap:10px;margin-bottom:18px}
+@media(min-width:640px){.field{grid-template-columns:1fr 1fr}}
+input{font:inherit;width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+label{font-size:.85rem;color:var(--mute);display:block;margin-bottom:3px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.cls{background:var(--card);border:1px solid var(--line);border-left:6px solid var(--cc);border-radius:10px;padding:12px}
+.cls h3{margin:0 0 8px;font-size:1.05rem}
+.spec{display:flex;justify-content:space-between;align-items:center;width:100%;font:inherit;text-align:left;margin-top:6px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.spec small{color:var(--mute)}
+.spec.on{background:var(--on);color:var(--onink);border-color:var(--on)}
+.spec.on small{color:var(--onink);opacity:.8}
+.bar{position:sticky;bottom:0;margin-top:16px;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:10px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.msg{color:var(--mute);font-size:.9rem}
+.roles{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px}
+.chip{display:inline-block;margin:3px 4px 0 0;padding:2px 8px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:.85rem}
+.row{margin-top:8px;font-size:.92rem}.row b{display:inline-block;min-width:90px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>⚔️ Raid Signup</h1>
+<p class="sub">Tap every class and spec you’re willing to raid on. Pick as many as you like, then save. Saving again with the same character name updates your earlier answer.</p>
+<div class="tabs"><button id="t1" class="act">Sign up</button><button id="t2">Roster overview</button></div>
+
+<section id="v1">
+  <div class="field">
+    <div><label for="cn">Character name</label><input id="cn" maxlength="40" placeholder="e.g. Thrallmoore"></div>
+    <div><label for="nt">Notes (optional)</label><input id="nt" maxlength="140" placeholder="Prefer main spec, can swap for bosses, etc."></div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="bar"><span class="msg" id="msg">0 selected</span><button class="btn primary" id="save">Save my picks</button></div>
+</section>
+
+<section id="v2" hidden>
+  <div class="roles" id="roles"></div>
+  <div class="grid" id="ov"></div>
+</section>
+</main>
+<script>
+// ====== SETUP: paste your Google Apps Script web app URL between the quotes ======
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbyOA6lwbbazlwUgWUkFnfohnVB3Kzk-0hWUsGU90iUY9Dew2pIDmFkRDP0lc-jOaEgo/exec";
+// ================================================================================
+
+const D={
+Warrior:["#C69B6D",[["Arms","DPS"],["Fury","DPS"],["Protection","Tank"]]],
+Paladin:["#F58CBA",[["Holy","Healer"],["Protection","Tank"],["Retribution","DPS"]]],
+Hunter:["#ABD473",[["Beast Mastery","DPS"],["Marksmanship","DPS"],["Survival","DPS"]]],
+Rogue:["#FFF569",[["Assassination","DPS"],["Combat","DPS"],["Subtlety","DPS"]]],
+Priest:["#CCCCCC",[["Discipline","Healer"],["Holy","Healer"],["Shadow","DPS"]]],
+Shaman:["#0070DE",[["Elemental","DPS"],["Enhancement","DPS"],["Restoration","Healer"]]],
+Mage:["#69CCF0",[["Arcane","DPS"],["Fire","DPS"],["Frost","DPS"]]],
+Warlock:["#9482C9",[["Affliction","DPS"],["Demonology","DPS"],["Destruction","DPS"]]],
+Druid:["#FF7D0A",[["Balance","DPS"],["Feral","DPS"],["Guardian","Tank"],["Restoration","Healer"]]]
+};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let picks=new Set(),all=[];
+
+function drawGrid(){
+  $("grid").innerHTML=Object.entries(D).map(([c,[col,specs]])=>
+   `<div class="cls" style="--cc:${col}"><h3>${esc(c)}</h3>`+
+   specs.map(([s,r])=>{const k=c+"|"+s;return `<button class="spec${picks.has(k)?" on":""}" data-k="${esc(k)}"><span>${esc(s)}</span><small>${r}</small></button>`}).join("")+`</div>`).join("");
+}
+$("grid").addEventListener("click",e=>{
+  const b=e.target.closest(".spec");if(!b)return;
+  const k=b.dataset.k;picks.has(k)?picks.delete(k):picks.add(k);
+  b.classList.toggle("on");$("msg").textContent=picks.size+" selected";
+});
+function drawOverview(){
+  const by={},people={Tank:new Set(),Healer:new Set(),DPS:new Set()};
+  all.forEach((p,i)=>(p.picks||[]).forEach(k=>{
+    (by[k]=by[k]||[]).push(p.charName||"Unnamed");
+    const [c,s]=k.split("|");const sp=(D[c]||[0,[]])[1].find(x=>x[0]===s);if(sp)people[sp[1]].add(i);
+  }));
+  $("roles").innerHTML=`<span class="pill"><b>${all.length}</b> signed up</span>`+
+   ["Tank","Healer","DPS"].map(r=>`<span class="pill">${r}: <b>${people[r].size}</b> people</span>`).join("");
+  $("ov").innerHTML=Object.entries(D).map(([c,[col,specs]])=>{
+    const rows=specs.map(([s])=>{const n=by[c+"|"+s]||[];
+      return `<div class="row"><b>${esc(s)} <small>(${n.length})</small></b>${n.map(x=>`<span class="chip">${esc(x)}</span>`).join("")}</div>`}).join("");
+    return `<div class="cls" style="--cc:${col}"><h3>${esc(c)}</h3>${rows}</div>`}).join("");
+}
+async function loadRoster(){
+  if(!ENDPOINT){$("roles").innerHTML='<span class="msg">Roster not connected yet (ENDPOINT is empty).</span>';return}
+  try{const r=await fetch(ENDPOINT);all=await r.json();if(!Array.isArray(all))all=[];drawOverview()}
+  catch(e){$("roles").innerHTML='<span class="msg">Couldn’t load the roster right now.</span>'}
+}
+function tab(n){$("v1").hidden=n!==1;$("v2").hidden=n!==2;$("t1").classList.toggle("act",n===1);$("t2").classList.toggle("act",n===2);if(n===2)loadRoster()}
+$("t1").onclick=()=>tab(1);$("t2").onclick=()=>tab(2);
+
+$("save").onclick=async()=>{
+  const name=$("cn").value.trim();
+  if(!ENDPOINT){$("msg").textContent="This page isn’t connected to a spreadsheet yet.";return}
+  if(!name){$("msg").textContent="Please enter your character name.";return}
+  if(!picks.size){$("msg").textContent="Pick at least one spec.";return}
+  const btn=$("save");btn.disabled=true;$("msg").textContent="Saving…";
+  try{
+    // text/plain avoids a CORS preflight, which Apps Script doesn't support
+    await fetch(ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({charName:name,note:$("nt").value.trim(),picks:[...picks]})});
+    try{localStorage.setItem("raidSignup",JSON.stringify({n:name,t:$("nt").value,p:[...picks]}))}catch(e){}
+    $("msg").textContent="Saved ✓ Check the Roster overview tab to confirm.";
+  }catch(e){$("msg").textContent="Couldn’t save. Check your connection and try again."}
+  btn.disabled=false;
+};
+
+drawGrid();
+try{const s=JSON.parse(localStorage.getItem("raidSignup")||"null");
+  if(s){$("cn").value=s.n||"";$("nt").value=s.t||"";picks=new Set((s.p||[]).filter(k=>{const[c,x]=k.split("|");return D[c]&&D[c][1].some(y=>y[0]===x)}));drawGrid();$("msg").textContent=picks.size+" selected (loaded from last visit)"}}catch(e){}
+</script>
+</body>
+</html>
